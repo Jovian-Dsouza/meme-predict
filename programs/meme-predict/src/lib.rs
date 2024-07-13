@@ -110,7 +110,7 @@ pub mod meme_predict {
 
 #[derive(Accounts)]
 pub struct InitializeCounter<'info> {
-    #[account(init, payer = creator, space = 8 + 8)]
+    #[account(init, seeds = [b"counter"], bump, payer = creator, space = 8 + 8 + 1)]
     pub counter: Account<'info, Counter>,
     #[account(mut)]
     pub creator: Signer<'info>,
@@ -118,7 +118,6 @@ pub struct InitializeCounter<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(bump: u8)]
 pub struct CreateMarket<'info> {
     #[account(mut)]
     pub counter: Account<'info, Counter>,
