@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-// use anchor_lang::system_program::{self, Transfer};
+use anchor_lang::system_program::{self, Transfer};
 
 pub mod contexts;
 use contexts::*;
@@ -49,32 +49,37 @@ pub mod meme_predict {
         Ok(())
     }
 
-    pub fn make_prediction(ctx: Context<MakePrediction>,  market_id: u64, prediction: bool, amount: u64) -> Result<()> {
-        // let prediction_account = &mut ctx.accounts.prediction;
-        // let market = &mut ctx.accounts.market;
+    pub fn make_prediction(ctx: Context<MakePrediction>,  _market_id: u64, prediction: bool, amount: u64) -> Result<()> {
+        let prediction_account = &mut ctx.accounts.prediction;
+        let market = &mut ctx.accounts.market;
 
-        // prediction_account.prediction = prediction;
-        // prediction_account.amount = amount;
+        let clock: Clock = Clock::get()?;
+        if market.voting_time < clock.unix_timestamp {
+            return Err(ErrorCode::VotingTimeExpired.into());
+        }
 
-        // if prediction {
-        //     market.total_yes_bets += amount;
-        //     market.up_predictions.push(*ctx.accounts.predictor.key);
-        // } else {
-        //     market.total_no_bets += amount;
-        //     market.down_predictions.push(*ctx.accounts.predictor.key);
-        // }
+        prediction_account.prediction = prediction;
+        prediction_account.amount = amount;
 
-        // // Transfer SOL from predictor to market account
-        // system_program::transfer(
-        //     CpiContext::new(
-        //         ctx.accounts.system_program.to_account_info(),
-        //         Transfer {
-        //             from: ctx.accounts.predictor.to_account_info(),
-        //             to: ctx.accounts.market.to_account_info(),
-        //         },
-        //     ),
-        //     amount,
-        // )?;
+        if prediction {
+            market.total_up_bets += amount;
+            market.up_predictions.push(*ctx.accounts.predictor.key);
+        } else {
+            market.total_down_bets += amount;
+            market.down_predictions.push(*ctx.accounts.predictor.key);
+        }
+
+        // Transfer SOL from predictor to market account
+        system_program::transfer(
+            CpiContext::new(
+                ctx.accounts.system_program.to_account_info(),
+                Transfer {
+                    from: ctx.accounts.predictor.to_account_info(),
+                    to: ctx.accounts.market.to_account_info(),
+                },
+            ),
+            amount,
+        )?;
 
         Ok(())
     }

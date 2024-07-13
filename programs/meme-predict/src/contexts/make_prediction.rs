@@ -3,7 +3,7 @@ use crate::Prediction;
 use crate::Market;
 
 #[derive(Accounts)]
-#[instruction(market_id : u64)]
+#[instruction(_market_id : u64)]
 pub struct MakePrediction<'info> {
     #[account(
             init, 
@@ -11,7 +11,7 @@ pub struct MakePrediction<'info> {
             space = 8 + Prediction::INIT_SPACE,
             seeds = [
                 b"prediction", 
-                market.key().as_ref(),
+                _market_id.to_le_bytes().as_ref(),
                 predictor.key().as_ref(),
             ],
             bump,
@@ -19,7 +19,7 @@ pub struct MakePrediction<'info> {
     pub prediction: Account<'info, Prediction>,
     #[account(
         mut,
-        seeds = [b"market".as_ref(), market_id.to_le_bytes().as_ref()], 
+        seeds = [b"market".as_ref(), _market_id.to_le_bytes().as_ref()], 
         bump
     )]
     pub market: Account<'info, Market>,

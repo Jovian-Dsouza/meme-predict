@@ -35,3 +35,31 @@ export function findCounterPDA(
     programId
   );
 }
+
+export function findMarketPDA(
+  marketId: number,
+  programId: web3.PublicKey
+): [web3.PublicKey, number] {
+  return anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("market", "utf8"),
+      new BN(marketId).toArrayLike(Buffer, "le", 8),
+    ],
+    programId
+  );
+}
+
+export function findPredictionPDA(
+  marketId: number,
+  predictorPublicKey: web3.PublicKey,
+  programId: web3.PublicKey
+): [web3.PublicKey, number] {
+  return anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("prediction", "utf8"),
+      new BN(marketId).toArrayLike(Buffer, "le", 8),
+      predictorPublicKey.toBuffer(),
+    ],
+    programId
+  );
+}

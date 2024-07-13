@@ -8,4 +8,6 @@ pub enum ErrorCode {
     InvalidSettlementTime,
     #[msg("Voting time must be less than settlement time")]
     InvalidTimes,
+    #[msg("Voting time must be less than current time when making prediction")]
+    VotingTimeExpired,
 }
