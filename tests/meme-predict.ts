@@ -22,7 +22,7 @@ describe("meme-predict", () => {
   it("Is initialized!", async () => {
     // Add your test here.
     const tx = await program.methods
-      .initializeCounter()
+      .initialize()
       .accounts({
         creator: provider.wallet.publicKey,
       })
@@ -39,9 +39,9 @@ describe("meme-predict", () => {
     await program.methods
       .createMarket(
         coinPubKey,
+        coinPrice,
         new anchor.BN(currentBlocktime + 60),
         new anchor.BN(currentBlocktime + 120),
-        coinPrice
       )
       .accounts({
         counter: counterPDA[0],
