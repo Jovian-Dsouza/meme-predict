@@ -23,7 +23,14 @@ pub mod meme_predict {
         Ok(())
     }
 
-    pub fn create_market(ctx: Context<CreateMarket>, coin: Pubkey, current_price: u64, voting_time: i64, settlement_time: i64) -> Result<()> {
+    pub fn create_market(
+            ctx: Context<CreateMarket>, 
+            coin: Pubkey, 
+            current_price: u64, 
+            fixed_voting_amount: u64,
+            voting_time: i64, 
+            settlement_time: i64
+        ) -> Result<()> {
         let current_timestamp = Clock::get()?.unix_timestamp;
         require!(voting_time > current_timestamp, ErrorCode::InvalidVotingTime);
         require!(settlement_time > current_timestamp, ErrorCode::InvalidSettlementTime);
@@ -42,14 +49,17 @@ pub mod meme_predict {
         market.result = None;
         market.up_predictions = vec![];
         market.down_predictions = vec![];
-        market.total_up_bets = 0;
-        market.total_down_bets = 0;
+        market.fixed_voting_amount = fixed_voting_amount;
 
         counter.count += 1;
         Ok(())
     }
 
-    pub fn make_prediction(ctx: Context<MakePrediction>,  _market_id: u64, prediction: bool, amount: u64) -> Result<()> {
+    pub fn make_prediction(
+        ctx: Context<MakePrediction>,  
+        _market_id: u64, 
+        prediction: bool, 
+    ) -> Result<()> {
         let prediction_account = &mut ctx.accounts.prediction;
         let market = &mut ctx.accounts.market;
 
@@ -58,14 +68,13 @@ pub mod meme_predict {
             return Err(ErrorCode::VotingTimeExpired.into());
         }
 
-        prediction_account.prediction = prediction;
-        prediction_account.amount = amount;
-
+        if prediction_account.done == true {
+            return Err(ErrorCode::AlreadyVoted.into());
+        }
+        prediction_account.done = true;
         if prediction {
-            market.total_up_bets += amount;
             market.up_predictions.push(*ctx.accounts.predictor.key);
         } else {
-            market.total_down_bets += amount;
             market.down_predictions.push(*ctx.accounts.predictor.key);
         }
 
@@ -75,16 +84,50 @@ pub mod meme_predict {
                 ctx.accounts.system_program.to_account_info(),
                 Transfer {
                     from: ctx.accounts.predictor.to_account_info(),
-                    to: ctx.accounts.market.to_account_info(),
+                    to: market.to_account_info(),
                 },
             ),
-            amount,
+            market.fixed_voting_amount,
         )?;
 
         Ok(())
     }
 
- 
+    // pub fn settle_market(ctx: Context<SettleMarket>, result: bool) -> Result<()> {
+    //     let market = &mut ctx.accounts.market;
+    //     if Clock::get()?.unix_timestamp > market.end_time {
+    //         market.result = Some(result);
+
+    //         // Calculate payouts
+    //         let total_pool = market.total_yes_bets + market.total_no_bets;
+    //         let winning_pool = if result {
+    //             market.total_yes_bets
+    //         } else {
+    //             market.total_no_bets
+    //         };
+
+    //         let winning_accounts = if result {
+    //             &market.yes_predictions
+    //         } else {
+    //             &market.no_predictions
+    //         };
+
+    //         for (i, winning_account) in winning_accounts.iter().enumerate() {
+    //             let payout_amount = (total_pool as f64 * (1.0 / winning_accounts.len() as f64)) as u64;
+    //             system_program::transfer(
+    //                 CpiContext::new(
+    //                     ctx.accounts.system_program.to_account_info(),
+    //                     Transfer {
+    //                         from: ctx.accounts.market.to_account_info(),
+    //                         to: ctx.remaining_accounts[i].to_account_info(),
+    //                     },
+    //                 ),
+    //                 payout_amount,
+    //             )?;
+    //         }
+    //     }
+    //     Ok(())
+    // }
 }
 
 

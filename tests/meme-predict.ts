@@ -1,7 +1,11 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { MemePredict } from "../target/types/meme_predict";
-import { findCounterPDA, findMarketPDA, findPredictionPDA } from "../client/utils";
+import {
+  findCounterPDA,
+  findMarketPDA,
+  findPredictionPDA,
+} from "../client/utils";
 import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
 import { confirmTransaction } from "@solana-developers/helpers";
 import { assert } from "chai";
@@ -19,6 +23,7 @@ describe("meme-predict", () => {
     "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263" //Bonk
   );
   const coinPrice = new anchor.BN(1000);
+  const fixedVotingAmount = new anchor.BN(100);
 
   it("Should Initialize the market", async () => {
     // Add your test here.
@@ -29,8 +34,8 @@ describe("meme-predict", () => {
       })
       .rpc();
 
-    const counterData = await program.account.counter.fetch(counterPDA[0]);
-    console.log(counterData);
+    let counterData = await program.account.counter.fetch(counterPDA[0]);
+    assert.equal(counterData.count.toString(), "0");
 
     const currentSlot = await program.provider.connection.getSlot();
     const currentBlocktime = await program.provider.connection.getBlockTime(
@@ -41,6 +46,7 @@ describe("meme-predict", () => {
       .createMarket(
         coinPubKey,
         coinPrice,
+        fixedVotingAmount,
         new anchor.BN(currentBlocktime + 3600),
         new anchor.BN(currentBlocktime + 3600 * 24)
       )
@@ -50,32 +56,30 @@ describe("meme-predict", () => {
       })
       .rpc();
 
-    const counterData2 = await program.account.counter.fetch(counterPDA[0]);
-    console.log(counterData2);
+    counterData = await program.account.counter.fetch(counterPDA[0]);
+    assert.equal(counterData.count.toString(), "1");
   });
 
   it("Makes a prediction (Up)", async () => {
     const marketId = 0;
-    const amount = 1000; //In sol lamports
     const [marketPDA] = findMarketPDA(marketId, program.programId);
-    const [predictionPDA] = findPredictionPDA(marketId, provider.wallet.publicKey, program.programId);
+    const [predictionPDA] = findPredictionPDA(
+      marketId,
+      provider.wallet.publicKey,
+      program.programId
+    );
     // const marketAccount = await program.account.market.fetch(marketPDA);
     await program.methods
-      .makePrediction(new anchor.BN(marketId), true, new anchor.BN(amount))
+      .makePrediction(new anchor.BN(marketId), true)
       .accounts({
         predictor: provider.wallet.publicKey,
       })
       .rpc();
 
-    const marketAccount = await program.account.market.fetch(
-      marketPDA
-    );
+    const marketAccount = await program.account.market.fetch(marketPDA);
     const predictionAccount = await program.account.prediction.fetch(
       predictionPDA
     );
-    assert.equal(predictionAccount.prediction, true);
-    assert.equal(predictionAccount.amount.toString(), amount.toString());
-    assert.equal(marketAccount.totalUpBets.toString(), amount.toString());
-    
+    assert.equal(predictionAccount.done, true);
   });
 });

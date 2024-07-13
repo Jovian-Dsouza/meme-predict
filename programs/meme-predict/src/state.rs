@@ -17,13 +17,11 @@ pub struct Market {
     pub result: Option<bool>,
     pub up_predictions: Vec<Pubkey>,
     pub down_predictions: Vec<Pubkey>,
-    pub total_up_bets: u64,
-    pub total_down_bets: u64,
+    pub fixed_voting_amount: u64,
 }
 
 #[account]
 #[derive(InitSpace)]
 pub struct Prediction {
-    pub prediction: bool,
-    pub amount: u64,
+    pub done: bool,
 }

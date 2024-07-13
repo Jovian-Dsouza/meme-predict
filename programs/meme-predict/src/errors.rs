@@ -10,4 +10,6 @@ pub enum ErrorCode {
     InvalidTimes,
     #[msg("Voting time must be less than current time when making prediction")]
     VotingTimeExpired,
+    #[msg("User already voted once")]
+    AlreadyVoted,
 }
