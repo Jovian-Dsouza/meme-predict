@@ -22,13 +22,24 @@ import { NextResponse } from "next/server";
 import * as anchor from "@coral-xyz/anchor";
 import { MemePredict } from "@/contracts/types/meme_predict";
 import IDL from "@/contracts/idl/meme_predict.json";
+import { web3, BN } from "@coral-xyz/anchor";
 
 export const GET = async (req: Request) => {
+  const marketId = 0; //TODO get this dynamically
+  const marketData = await getMarketDetails(marketId);
+  
+  const tokenName = "BONK" //TODO get this from market data token name
+  const initialPrice = marketData.initialPrice.toNumber() / web3.LAMPORTS_PER_SOL;
+
   const payload: ActionGetResponse = {
     title: "Make Prediction",
-    icon: new URL("/meme-prediction-sq.png", new URL(req.url).origin).toString(),
-    description: "Will this token at this price go up or down ?",
-    label: "Make prediction",
+    icon: new URL(
+      "/meme-prediction-sq.png",
+      new URL(req.url).origin,
+    ).toString(),
+    description: `Will ${tokenName} currently at ${initialPrice}USD, go up or down ?`,
+    label: `Make prediction from ${tokenName}`,
+    disabled: false, //TODO disable if voting time has passed
     links: {
       actions: [
         {
@@ -142,3 +153,34 @@ export const POST = async (req: Request) => {
     });
   }
 };
+
+
+async function getMarketDetails(marketId: number){
+  const connection = new Connection(
+    process.env.SOLANA_RPC! || clusterApiUrl("devnet"),
+  );
+  const wallet = new anchor.Wallet(anchor.web3.Keypair.generate());
+  const provider = new anchor.AnchorProvider(connection, wallet);
+
+  const program = new anchor.Program(
+    IDL as MemePredict,
+    provider,
+  ) as unknown as anchor.Program<MemePredict>;
+
+  const [marketPDA] = findMarketPDA(marketId, program.programId);
+  const marketAccount = await program.account.market.fetch(marketPDA);
+  return marketAccount;
+}
+
+function findMarketPDA(
+  marketId: number,
+  programId: web3.PublicKey,
+): [web3.PublicKey, number] {
+  return anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("market", "utf8"),
+      new BN(marketId).toArrayLike(Buffer, "le", 8),
+    ],
+    programId,
+  );
+}
