@@ -1,84 +1,112 @@
 "use client";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SolanaQRCode } from "@/components/qr-code";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { siteConfig } from "@/config/site";
 import { useEffect, useState } from "react";
-import { DevnetAlert } from "@/components/devnet-alert";
+import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { useMemePredictProgram } from "@/hooks/useMemePredictProgram";
+import { ThemeModeToggle } from "@/components/theme-mode-toggle";
+import { Button } from "@/components/ui/button";
+import { getAssetByAddress, shortenAddress } from "@/data/solanaAssests";
+import Link from "next/link";
 
-export default function Pages() {
-  const apiPath = "/api/actions/make_prediction";
-  const [apiEndpoint, setApiEndpoint] = useState("");
+interface Market {
+  id: number;
+  coin: PublicKey;
+  voting_time: number;
+  settlement_time: number;
+  initial_price: number;
+  creator: PublicKey;
+  result: boolean | null;
+  total_up_bets: number;
+  total_down_bets: number;
+  fixed_voting_amount: number;
+}
+
+export default function ListMarketsPage() {
+  const [markets, setMarkets] = useState<Market[]>([]);
+  const { program, programId, findCounterPDA, findMarketPDA } = useMemePredictProgram();
 
   useEffect(() => {
-    setApiEndpoint(new URL(apiPath, window.location.href).toString());
+    const fetchMarkets = async () => {
+      if(!programId || !program){return;}
+      const marketsData: Market[] = [];
 
-    return () => {
-      setApiEndpoint(new URL(apiPath, window.location.href).toString());
+      const [counterPDA] = findCounterPDA(programId);
+      const counterAccount = await program.account.counter.fetch(counterPDA)
+      const totalMarkets = counterAccount.count.toNumber()
+
+      for (let i = 0; i < totalMarkets; i++) {
+        const [marketPDA] = findMarketPDA(i, programId);
+        const marketAccount = await program.account.market.fetch(marketPDA);
+        marketsData.push({
+          id: marketAccount.id.toNumber(),
+          coin: marketAccount.coin,
+          voting_time: marketAccount.votingTime.toNumber(),
+          settlement_time: marketAccount.settlementTime.toNumber(),
+          initial_price:
+            marketAccount.initialPrice.toNumber() / LAMPORTS_PER_SOL,
+          creator: marketAccount.creator,
+          result: marketAccount.result,
+          total_up_bets: marketAccount.totalUpBets.toNumber(),
+          total_down_bets: marketAccount.totalDownBets.toNumber(),
+          fixed_voting_amount:
+            marketAccount.fixedVotingAmount.toNumber() / LAMPORTS_PER_SOL,
+        });
+      }
+
+      setMarkets(marketsData);
     };
-  }, []);
+
+    fetchMarkets();
+  }, [program, programId]);
 
   return (
-    <section
-      id="action"
-      className={
-        "container space-y-12 bg-slate-50 py-8 dark:bg-transparent md:py-12 lg:py-24"
-      }
-    >
-      <DevnetAlert />
-
-      <div className="mx-auto flex max-w-[58rem] flex-col items-center space-y-6 text-center">
-        <h2 className="font-heading text-3xl leading-[1.1] sm:text-3xl md:text-6xl">
-          Make Prediction
-        </h2>
-        <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-          Scan the code below and predict if the token will go up or down. You
-          win if you predicted correctly
-        </p>
-      </div>
-
-      <Card className="group-hover:border-primary max-w-[80vw] md:max-w-[400px] aspect-square rounded overflow-clip text-center flex items-center justify-center mx-auto">
-        <SolanaQRCode
-          url={apiPath}
-          color="white"
-          background="black"
-          size={400}
-          className="rounded-lg aspect-square [&>svg]:scale-75 md:[&>svg]:scale-100"
-        />
-      </Card>
-
-      <div className="mx-auto text-center md:max-w-[58rem]">
-        <p className="leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-          Try it on Dialet Interstial Site{" "}
-          <Button variant={"link"} asChild>
-            <Link
-              href={`https://dial.to/?action=solana-action:https://meme-predict.vercel.app/api/actions/make_predictions`}
-              target="_blank"
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+      <header className="container z-40 bg-background">
+        <div className="flex h-20 items-center justify-between py-6">
+          <h1 className="text-2xl font-bold">Available Markets for Voting</h1>
+        </div>
+      </header>
+      <main className="flex-1 space-y-10 max-w-screen-xl mx-auto p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {markets.map((market) => (
+            <div
+              key={market.id}
+              className="p-4 border border-gray-300 rounded-md"
             >
-              click here
-            </Link>
-          </Button>{" "}.
-        </p>
-      </div>
-
-      <Card className="group-hover:border-primary">
-        <CardHeader>
-          <CardTitle className="space-y-3">Action Endpoint</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <p className="text-muted-foreground">
-            <Link
-              href={apiEndpoint}
-              target="_blank"
-              className="underline hover:text-primary"
-            >
-              {apiEndpoint}
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </section>
+              <h2 className="text-lg font-semibold">Market ID: {market.id}</h2>
+              <p>Coin: {getAssetByAddress(market.coin.toString())!.name}</p>
+              <p>
+                Voting Time:{" "}
+                {new Date(market.voting_time * 1000).toLocaleString()}
+              </p>
+              <p>
+                Settlement Time:{" "}
+                {new Date(market.settlement_time * 1000).toLocaleString()}
+              </p>
+              <p>Initial Price: {market.initial_price} USD</p>
+              <p>Creator: {shortenAddress(market.creator.toString())}</p>
+              <p>
+                Result:{" "}
+                {market.result === null
+                  ? "Pending"
+                  : market.result
+                  ? "Up"
+                  : "Down"}
+              </p>
+              <p>Total Up Bets: {market.total_up_bets}</p>
+              <p>Total Down Bets: {market.total_down_bets}</p>
+              <p>Fixed Voting Amount: {market.fixed_voting_amount} SOL</p>
+              <Button className="mt-2">
+                <Link
+                  href={`https://dial.to/?action=solana-action:https://meme-predict.vercel.app/api/actions/make_predictions?market=${market.id}`}
+                  target="_blank"
+                >
+                  Vote Now
+                </Link>
+              </Button>
+            </div>
+          ))}
+        </div>
+      </main>
+    </div>
   );
 }

@@ -25,3 +25,13 @@ export function getAssetByName(name: string) {
   const lowerCaseName = name.toLowerCase();
   return assets.find((asset) => asset.name.toLowerCase() === lowerCaseName);
 }
+
+export function shortenAddress(address: string, chars = 4): string {
+  if (!address) return "";
+  return `${address.slice(0, chars)}...${address.slice(-chars)}`;
+}
+
+export function getAssetByAddress(address: string) {
+  const asset = assets.find((asset) => asset.mint === address);
+  return asset ? asset : { name: shortenAddress(address) };
+}

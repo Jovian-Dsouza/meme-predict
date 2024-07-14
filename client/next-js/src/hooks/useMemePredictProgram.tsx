@@ -170,12 +170,13 @@ export function useMemePredictProgram() {
 
   const value = useMemo(
     () => ({
-      escrowProgram: program,
       makePrediction,
       findMarketPDA,
       findPredictionPDA,
       findCounterPDA,
       createMarket,
+      programId: program?.programId,
+      program,
     }),
     [program],
   );
