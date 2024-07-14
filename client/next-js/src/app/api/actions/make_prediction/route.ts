@@ -1,12 +1,7 @@
-/**
- * Solana Actions Example
- */
-
 import {
   ActionPostResponse,
   ACTIONS_CORS_HEADERS,
   createPostResponse,
-  MEMO_PROGRAM_ID,
   ActionGetResponse,
   ActionPostRequest,
 } from "@solana/actions";
@@ -125,43 +120,28 @@ export const POST = async (req: Request) => {
       )
       .instruction();
 
-    instruction.keys.push({
-      pubkey: new PublicKey(account),
-      isSigner: true,
-      isWritable: false,
-    });
-
-    const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
-      microLamports: 15000,
-    });
-
-    const { blockhash } = await connection.getLatestBlockhash({
-      commitment: "max",
-    });
-
-    const messageV0 = new anchor.web3.TransactionMessage({
-      payerKey: new anchor.web3.PublicKey(account),
-      recentBlockhash: blockhash,
-      instructions: [addPriorityFee, instruction],
-    }).compileToV0Message();
-
-    const versionedTransaction = new anchor.web3.VersionedTransaction(
-      messageV0,
+    const txn = new Transaction().add(
+      ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 1000,
+      }),
+      instruction,
     );
+    txn.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+    txn.feePayer = account;
 
-    const serializedTransaction = Buffer.from(
-      versionedTransaction.serialize(),
-    ).toString("base64");
-
-    return NextResponse.json(
-      {
-        transaction: serializedTransaction,
+    const payload: ActionPostResponse = await createPostResponse({
+      fields: {
+        transaction: txn,
         message: "Prediction Made!",
       },
-      {
-        headers: ACTIONS_CORS_HEADERS,
-      },
-    );
+      // no additional signers are required for this transaction
+      // signers: [],
+    });
+
+    return NextResponse.json(payload, {
+      headers: ACTIONS_CORS_HEADERS,
+    });
+
   } catch (err) {
     console.log(err);
     let message = "An unknown error occurred";
