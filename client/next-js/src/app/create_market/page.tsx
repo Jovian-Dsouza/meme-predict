@@ -1,21 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ThemeModeToggle } from "@/components/theme-mode-toggle";
-import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
 import { useMemePredictProgram } from "@/hooks/useMemePredictProgram";
 import { getAssetByName, getSupportedAssetList } from "@/data/solanaAssests"; // Adjust the path as needed
 
 export default function CreateMarketPage() {
-  const { walletPublicKey, wallet } = useWallet();
   const [token, setToken] = useState("");
   const [tokenPrice, setTokenPrice] = useState("");
   const [votingAmount, setVotingAmount] = useState("");
   const [votingTimeInSecs, setVotingTimeInSecs] = useState("");
   const [settlementTimeInSecs, setSettlementTimeInSecs] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const { createMarket } = useMemePredictProgram();
 

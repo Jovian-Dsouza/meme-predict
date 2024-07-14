@@ -85,7 +85,7 @@ export function useMemePredictProgram() {
   ) {
     const txn = new Transaction().add(instruction);
     txn.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-    txn.feePayer = walletPublicKey;
+    txn.feePayer = walletPublicKey!;
 
     const signedTransaction = await signTransaction!(txn);
     const txid = await connection.sendRawTransaction(

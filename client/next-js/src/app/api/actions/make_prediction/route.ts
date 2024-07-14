@@ -23,40 +23,55 @@ import * as anchor from "@coral-xyz/anchor";
 import { MemePredict } from "@/contracts/types/meme_predict";
 import IDL from "@/contracts/idl/meme_predict.json";
 import { web3, BN } from "@coral-xyz/anchor";
+import { getAssetByAddress } from "@/data/solanaAssests";
 
 export const GET = async (req: Request) => {
-  const marketId = 0; //TODO get this dynamically
-  const marketData = await getMarketDetails(marketId);
-  
-  const tokenName = "BONK" //TODO get this from market data token name
-  const initialPrice = marketData.initialPrice.toNumber() / web3.LAMPORTS_PER_SOL;
+  try {
+    const query = req.url.split("?");
+    const market = query[1].split("market=")[1];
+    const marketId = parseInt(market);
 
-  const payload: ActionGetResponse = {
-    title: "Make Prediction",
-    icon: new URL(
-      "/meme-prediction-sq.png",
-      new URL(req.url).origin,
-    ).toString(),
-    description: `Will ${tokenName} currently at ${initialPrice}USD, go up or down ?`,
-    label: `Make prediction from ${tokenName}`,
-    disabled: false, //TODO disable if voting time has passed
-    links: {
-      actions: [
-        {
-          label: "UP",
-          href: "/api/actions/make_prediction?prediction=UP",
-        },
-        {
-          label: "DOWN",
-          href: "/api/actions/make_prediction?prediction=DOWN",
-        },
-      ],
-    },
-  };
+    const marketData = await getMarketDetails(marketId);
 
-  return NextResponse.json(payload, {
-    headers: ACTIONS_CORS_HEADERS,
-  });
+    const tokenName = getAssetByAddress(marketData.coin.toString()).name; 
+    const initialPrice =
+      marketData.initialPrice.toNumber() / web3.LAMPORTS_PER_SOL;
+
+    const payload: ActionGetResponse = {
+      title: "Make Prediction",
+      icon: new URL(
+        "/meme-prediction-sq.png",
+        new URL(req.url).origin,
+      ).toString(),
+      description: `Will ${tokenName} currently at ${initialPrice}USD, go up or down ?`,
+      label: `Make prediction for ${tokenName}`,
+      disabled: false, //TODO disable if voting time has passed
+      links: {
+        actions: [
+          {
+            label: "UP",
+            href: `/api/actions/make_prediction?market=${marketId}&prediction=UP`,
+          },
+          {
+            label: "DOWN",
+            href: `/api/actions/make_prediction?market=${marketId}&prediction=DOWN`,
+          },
+        ],
+      },
+    };
+
+    return NextResponse.json(payload, {
+      headers: ACTIONS_CORS_HEADERS,
+    });
+  } catch (err) {
+    console.log(err);
+    let message = "An unknown error occurred";
+    if (typeof err == "string") message = err;
+    return new NextResponse(message, {
+      status: 400,
+      headers: ACTIONS_CORS_HEADERS,
+    });
+  }
 };
 
 // DO NOT FORGET TO INCLUDE THE `OPTIONS` HTTP METHOD
@@ -65,9 +80,13 @@ export const OPTIONS = GET;
 
 export const POST = async (req: Request) => {
   try {
-    const marketId = 0; //TODO get this dynamically
-    const query = req.url.split("?");
+    const query = req.url.split("?")[1].split("&");
+    const market = query[0].split("market=")[1];
+    const marketId = parseInt(market);
     const prediction = query[1].split("prediction=")[1];
+
+    // console.log("marketId", marketId)
+    // console.log("prediction", prediction)
 
     if (!prediction || (prediction != "UP" && prediction != "DOWN")) {
       return new Response("Missing or Invalid prediction parameter", {
@@ -154,8 +173,7 @@ export const POST = async (req: Request) => {
   }
 };
 
-
-async function getMarketDetails(marketId: number){
+async function getMarketDetails(marketId: number) {
   const connection = new Connection(
     process.env.SOLANA_RPC! || clusterApiUrl("devnet"),
   );
