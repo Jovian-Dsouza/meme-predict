@@ -19,22 +19,22 @@ const actionCards: Array<{
   icon: React.ReactNode;
 }> = [
   {
-    title: "On-chain Memo",
-    href: "/memo",
-    description: "Send a simple message on-chain using an SPL Memo.",
+    title: "Create Market",
+    href: "/create_market",
+    description: "Create Predicion Market",
     icon: <FileTextIcon className="size-12" />,
   },
   {
-    title: "Staking SOL",
-    href: "/stake",
+    title: "Make Prediction",
+    href: "/make_prediction",
     description:
-      "Help secure the Solana network by staking SOL to a validator.",
+      "Make prediction for market",
     icon: <ShieldIcon className="size-12" />,
   },
   {
-    title: "Transfer Native SOL",
-    href: "/transfer-sol",
-    description: "Easily transfer native SOL to any other Solana wallet.",
+    title: "Claim reward",
+    href: "/claim_reward",
+    description: "Claim reward for your prediction",
     icon: <WalletIcon className="size-12" />,
   },
   // {

@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { DevnetAlert } from "@/components/devnet-alert";
 
 export default function Pages() {
-  const apiPath = "/api/actions/memo";
+  const apiPath = "/api/actions/make_prediction";
   const [apiEndpoint, setApiEndpoint] = useState("");
 
   useEffect(() => {
@@ -31,11 +31,11 @@ export default function Pages() {
 
       <div className="mx-auto flex max-w-[58rem] flex-col items-center space-y-6 text-center">
         <h2 className="font-heading text-3xl leading-[1.1] sm:text-3xl md:text-6xl">
-          Simple Memo
+          Make Prediction
         </h2>
         <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-          The following example demonstrates how to publish a simple message
-          on-chain using an Action and the SPL Memo program.
+          Scan the code below and predict if the token will go up or down. You
+          win if you predicted correctly
         </p>
       </div>
 
@@ -51,16 +51,15 @@ export default function Pages() {
 
       <div className="mx-auto text-center md:max-w-[58rem]">
         <p className="leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-          View the{" "}
+          Try it on Dialet Interstial Site{" "}
           <Button variant={"link"} asChild>
             <Link
-              href={`${siteConfig.links.github}/src/app${apiPath}/route.ts`}
+              href={`https://dial.to/?action=solana-action:https://meme-predict.vercel.app/api/actions/make_predictions`}
               target="_blank"
             >
-              source code for this sample Action
+              click here
             </Link>
-          </Button>{" "}
-          on GitHub.
+          </Button>{" "}.
         </p>
       </div>
 
