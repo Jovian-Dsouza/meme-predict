@@ -25,7 +25,7 @@ export const GET = async (req: Request) => {
     title: "Actions Example - Simple On-chain Memo",
     icon: new URL("/solana_devs.jpg", new URL(req.url).origin).toString(),
     description: "Send a message on-chain using a Memo",
-    label: "Send Memo",
+    label: "Make prediction",
   };
 
   return NextResponse.json(payload, {
