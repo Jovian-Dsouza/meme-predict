@@ -18,6 +18,7 @@ import {
   Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
+import { NextResponse } from "next/server";
 
 export const GET = async (req: Request) => {
   const payload: ActionGetResponse = {
@@ -27,7 +28,7 @@ export const GET = async (req: Request) => {
     label: "Send Memo",
   };
 
-  return Response.json(payload, {
+  return NextResponse.json(payload, {
     headers: ACTIONS_CORS_HEADERS,
   });
 };
@@ -82,14 +83,14 @@ export const POST = async (req: Request) => {
       // signers: [],
     });
 
-    return Response.json(payload, {
+    return NextResponse.json(payload, {
       headers: ACTIONS_CORS_HEADERS,
     });
   } catch (err) {
     console.log(err);
     let message = "An unknown error occurred";
     if (typeof err == "string") message = err;
-    return new Response(message, {
+    return new NextResponse(message, {
       status: 400,
       headers: ACTIONS_CORS_HEADERS,
     });

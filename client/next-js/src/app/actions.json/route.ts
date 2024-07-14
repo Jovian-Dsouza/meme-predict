@@ -1,4 +1,5 @@
 import { ACTIONS_CORS_HEADERS, ActionsJson } from "@solana/actions";
+import { NextResponse } from "next/server";
 
 export const GET = async () => {
   const payload: ActionsJson = {
@@ -16,7 +17,7 @@ export const GET = async () => {
     ],
   };
 
-  return Response.json(payload, {
+  return NextResponse.json(payload, {
     headers: ACTIONS_CORS_HEADERS,
   });
 };
