@@ -22,16 +22,19 @@ interface Market {
 
 export default function ListMarketsPage() {
   const [markets, setMarkets] = useState<Market[]>([]);
-  const { program, programId, findCounterPDA, findMarketPDA } = useMemePredictProgram();
+  const { program, programId, findCounterPDA, findMarketPDA } =
+    useMemePredictProgram();
 
   useEffect(() => {
     const fetchMarkets = async () => {
-      if(!programId || !program){return;}
+      if (!programId || !program) {
+        return;
+      }
       const marketsData: Market[] = [];
 
       const [counterPDA] = findCounterPDA(programId);
-      const counterAccount = await program.account.counter.fetch(counterPDA)
-      const totalMarkets = counterAccount.count.toNumber()
+      const counterAccount = await program.account.counter.fetch(counterPDA);
+      const totalMarkets = counterAccount.count.toNumber();
 
       for (let i = 0; i < totalMarkets; i++) {
         const [marketPDA] = findMarketPDA(i, programId);
@@ -97,7 +100,9 @@ export default function ListMarketsPage() {
               <p>Fixed Voting Amount: {market.fixed_voting_amount} SOL</p>
               <Button className="mt-2">
                 <Link
-                  href={`https://dial.to/?action=solana-action:https://meme-predict.vercel.app/api/actions/make_predictions?market=${market.id}`}
+                  href={`https://dial.to/?action=${encodeURIComponent(
+                    `solana-action:https://meme-predict.vercel.app/api/actions/make_prediction?market=${market.id}`,
+                  )}`}
                   target="_blank"
                 >
                   Vote Now
