@@ -24,8 +24,6 @@ describe("meme-predict", () => {
   let secondUser = anchor.web3.Keypair.generate();
 
   before(async () => {
-    console.log("Counter PDA:", counterPDA.toString());
-
     // Airdrop SOL to the second user account
     const airdropSig = await provider.connection.requestAirdrop(
       secondUser.publicKey,
@@ -103,7 +101,6 @@ describe("meme-predict", () => {
       .makePrediction(new anchor.BN(marketId), false)
       .accounts({
         predictor: secondUser.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
       })
       .signers([secondUser])
       .rpc();
