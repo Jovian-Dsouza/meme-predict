@@ -949,6 +949,30 @@ snake-case@^3.0.4:
     dot-case "^3.0.4"
     tslib "^2.0.3"
 
+solana-bankrun-linux-x64-gnu@0.3.0:
+  version "0.3.0"
+  resolved "https://registry.npmjs.org/solana-bankrun-linux-x64-gnu/-/solana-bankrun-linux-x64-gnu-0.3.0.tgz"
+  integrity sha512-qJSkCFs0k2n4XtTnyxGMiZsuqO2TiqTYgWjQ+3mZhGNUAMys/Vq8bd7/SyBm6RR7EfVuRXRxZvh+F8oKZ77V4w==
+
+solana-bankrun-linux-x64-musl@0.3.0:
+  version "0.3.0"
+  resolved "https://registry.npmjs.org/solana-bankrun-linux-x64-musl/-/solana-bankrun-linux-x64-musl-0.3.0.tgz"
+  integrity sha512-xsS2CS2xb1Sw4ivNXM0gPz/qpW9BX0neSvt/pnok5L330Nu9xlTnKAY8FhzzqOP9P9sJlGRM787Y6d0yYwt6xQ==
+
+solana-bankrun@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.npmjs.org/solana-bankrun/-/solana-bankrun-0.3.0.tgz"
+  integrity sha512-YkH7sa8TB/AoRPzG17CXJtYsRIQHEkEqGLz1Vwc13taXhDBkjO7z6NI5JYw7n0ybRymDHwMYTc7sd+5J40TyVQ==
+  dependencies:
+    "@solana/web3.js" "^1.68.0"
+    bs58 "^4.0.1"
+  optionalDependencies:
+    solana-bankrun-darwin-arm64 "0.3.0"
+    solana-bankrun-darwin-universal "0.3.0"
+    solana-bankrun-darwin-x64 "0.3.0"
+    solana-bankrun-linux-x64-gnu "0.3.0"
+    solana-bankrun-linux-x64-musl "0.3.0"
+
 source-map-support@^0.5.6:
   version "0.5.21"
   resolved "https://registry.npmjs.org/source-map-support/-/source-map-support-0.5.21.tgz"

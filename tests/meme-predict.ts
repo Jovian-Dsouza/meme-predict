@@ -9,6 +9,7 @@ import {
 import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
 import { confirmTransaction } from "@solana-developers/helpers";
 import { assert } from "chai";
+import { setTimeout } from "timers/promises";
 
 describe("meme-predict", () => {
   // Configure the client to use the local cluster.
@@ -41,14 +42,14 @@ describe("meme-predict", () => {
     const currentBlocktime = await program.provider.connection.getBlockTime(
       currentSlot
     );
-
+    // console.log(currentBlocktime);
     await program.methods
       .createMarket(
         coinPubKey,
         coinPrice,
         fixedVotingAmount,
-        new anchor.BN(currentBlocktime + 3600),
-        new anchor.BN(currentBlocktime + 3600 * 24)
+        new anchor.BN(currentBlocktime + 2),
+        new anchor.BN(currentBlocktime + 4)
       )
       .accounts({
         counter: counterPDA[0],
@@ -81,5 +82,51 @@ describe("meme-predict", () => {
       predictionPDA
     );
     assert.equal(predictionAccount.done, true);
+  });
+
+  it("Settles the market", async () => {
+    const marketId = 0;
+    const [marketPDA] = findMarketPDA(marketId, program.programId);
+
+    //Wait for market to end
+    await setTimeout(6000);
+
+    await program.methods
+      .settleMarket(new anchor.BN(marketId), coinPrice.add(new anchor.BN(100)))
+      .rpc();
+
+    const marketAccount = await program.account.market.fetch(marketPDA);
+    assert.equal(marketAccount.result, true); // Assuming finalPrice > initial_price
+  });
+
+  it("Claims reward", async () => {
+    const marketId = 0;
+    const [marketPDA] = findMarketPDA(marketId, program.programId);
+    const [predictionPDA] = findPredictionPDA(
+      marketId,
+      provider.wallet.publicKey,
+      program.programId
+    );
+    const initialBalance = await provider.connection.getBalance(
+      provider.wallet.publicKey
+    );
+    console.log(initialBalance)
+
+    await program.methods
+      .claimReward(new anchor.BN(marketId))
+      .accounts({
+        user: provider.wallet.publicKey,
+      })
+      .rpc();
+
+    const finalBalance = await provider.connection.getBalance(
+      provider.wallet.publicKey
+    );
+    // assert(finalBalance > initialBalance);
+    console.log(finalBalance)
+    const predictionAccount = await program.account.prediction.fetch(
+      predictionPDA
+    );
+    assert.equal(predictionAccount.claimed, true);
   });
 });
