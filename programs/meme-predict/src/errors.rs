@@ -12,4 +12,10 @@ pub enum ErrorCode {
     VotingTimeExpired,
     #[msg("User already voted once")]
     AlreadyVoted,
+    #[msg("User already claimed once")]
+    AlreadyClaimed,
+    #[msg("Market already settled")]
+    AlreadySettled,
+    #[msg("Settlement time has not been completed")]
+    MarketNotSettled,
 }

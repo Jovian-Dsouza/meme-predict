@@ -44,11 +44,11 @@ pub mod meme_predict {
         market.coin = coin;
         market.voting_time = voting_time;
         market.settlement_time = settlement_time;
-        market.current_price = current_price;
+        market.initial_price = current_price;
         market.creator = *ctx.accounts.creator.key;
         market.result = None;
-        market.up_predictions = vec![];
-        market.down_predictions = vec![];
+        market.total_up_bets = 0;
+        market.total_down_bets = 0;
         market.fixed_voting_amount = fixed_voting_amount;
 
         counter.count += 1;
@@ -71,11 +71,12 @@ pub mod meme_predict {
         if prediction_account.done == true {
             return Err(ErrorCode::AlreadyVoted.into());
         }
+        prediction_account.prediction = prediction;
         prediction_account.done = true;
         if prediction {
-            market.up_predictions.push(*ctx.accounts.predictor.key);
+            market.total_up_bets += 1;
         } else {
-            market.down_predictions.push(*ctx.accounts.predictor.key);
+            market.total_down_bets += 1;
         }
 
         // Transfer SOL from predictor to market account
@@ -93,41 +94,50 @@ pub mod meme_predict {
         Ok(())
     }
 
-    // pub fn settle_market(ctx: Context<SettleMarket>, result: bool) -> Result<()> {
-    //     let market = &mut ctx.accounts.market;
-    //     if Clock::get()?.unix_timestamp > market.end_time {
-    //         market.result = Some(result);
+    pub fn settle_market(ctx: Context<SettleMarket>, _market_id: u64, final_price: u64) -> Result<()> {
+        let market = &mut ctx.accounts.market;
 
-    //         // Calculate payouts
-    //         let total_pool = market.total_yes_bets + market.total_no_bets;
-    //         let winning_pool = if result {
-    //             market.total_yes_bets
-    //         } else {
-    //             market.total_no_bets
-    //         };
+        if market.result != None {
+            return Err(ErrorCode::AlreadySettled.into());
+        }
+        if Clock::get()?.unix_timestamp < market.settlement_time {
+            return Err(ErrorCode::MarketNotSettled.into());
+        }
+        let result = final_price > market.initial_price;
+        market.result = Some(result);
+    
+        Ok(())
+    }
 
-    //         let winning_accounts = if result {
-    //             &market.yes_predictions
-    //         } else {
-    //             &market.no_predictions
-    //         };
+    pub fn claim_reward(ctx: Context<ClaimReward>, _market_id: u64) -> Result<()> {
+        let prediction_account = &mut ctx.accounts.prediction;
+        let market = &mut ctx.accounts.market;
 
-    //         for (i, winning_account) in winning_accounts.iter().enumerate() {
-    //             let payout_amount = (total_pool as f64 * (1.0 / winning_accounts.len() as f64)) as u64;
-    //             system_program::transfer(
-    //                 CpiContext::new(
-    //                     ctx.accounts.system_program.to_account_info(),
-    //                     Transfer {
-    //                         from: ctx.accounts.market.to_account_info(),
-    //                         to: ctx.remaining_accounts[i].to_account_info(),
-    //                     },
-    //                 ),
-    //                 payout_amount,
-    //             )?;
-    //         }
-    //     }
-    //     Ok(())
-    // }
+        if prediction_account.claimed == true {
+            return Err(ErrorCode::AlreadyClaimed.into());
+        }
+
+        if market.result == None {
+            return Err(ErrorCode::MarketNotSettled.into());
+        }
+
+        let total_pool = (market.total_up_bets + market.total_down_bets) * market.fixed_voting_amount;
+
+        let winning_amount = if market.result == Some(true) {
+            (total_pool as f64 * (1.0 / market.total_up_bets as f64)) as u64
+        } else {
+            (total_pool as f64 * (1.0 / market.total_down_bets as f64)) as u64
+        };
+
+        if market.result == Some(prediction_account.prediction) {
+            **market.to_account_info().try_borrow_mut_lamports()? -= winning_amount;
+            **ctx.accounts.user.to_account_info().try_borrow_mut_lamports()? += winning_amount;
+        }
+
+        prediction_account.claimed = true;
+    
+        Ok(())
+    }
 }
 
 
