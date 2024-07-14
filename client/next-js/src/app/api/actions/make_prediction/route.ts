@@ -26,7 +26,7 @@ import IDL from "@/contracts/idl/meme_predict.json";
 export const GET = async (req: Request) => {
   const payload: ActionGetResponse = {
     title: "Make Prediction",
-    icon: new URL("/solana_devs.jpg", new URL(req.url).origin).toString(),
+    icon: new URL("/meme-prediction-sq.png", new URL(req.url).origin).toString(),
     description: "Will this token at this price go up or down ?",
     label: "Make prediction",
     links: {
